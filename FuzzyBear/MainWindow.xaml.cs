@@ -24,8 +24,11 @@ namespace FuzzyBear
     /// </summary>
     public partial class MainWindow : Window
     {
-        private string filePath1 = "";
-        private string filePath2 = "";
+        //private string filePath1 = "";
+        //private string filePath2 = "";
+
+        private string seedFilePath = "";
+        private List<string> comparisonFilePaths = new List<string>();
 
 
         private static byte[] GetBytes(string str)
@@ -46,56 +49,43 @@ namespace FuzzyBear
         public delegate void ChangedFileSelection(object sender, EventArgs e);
 
         public MainWindow()
-        {
-            //string str1= "Also called fuzzy hashes, Ctph can match inputs that have homologies.";
-            //var bytesStr1 = GetBytes(str1);
-            //string str2= "Also called fuzzy hashes, CTPH can match inputs that have homologies.";
-            //var bytesStr2 = GetBytes(str2);
-            
-
-            //var str1_hash = SsdeepNET.Hasher.HashBuffer(bytesStr1, bytesStr1.Length);
-            //var str2_hash = SsdeepNET.Hasher.HashBuffer(bytesStr2, bytesStr2.Length);
-            //var comparisionResult = Comparer.Compare(str1_hash, str2_hash);
-
-            //System.Diagnostics.Debug.WriteLine("Lookie here: ");
-            //System.Diagnostics.Debug.WriteLine(str1_hash);
-            //System.Diagnostics.Debug.WriteLine(str2_hash);
-            //System.Diagnostics.Debug.WriteLine(comparisionResult);
-            //System.Diagnostics.Debug.WriteLine(test.ToString());
+        {   
             InitializeComponent();
         }
 
-        
+
         private void Compare_Button_Click(object sender, RoutedEventArgs e)
         {
             // check that both file drops are set
-            if (filePath1 != null && filePath2 != null)
+            if (!String.IsNullOrEmpty(seedFilePath) && comparisonFilePaths.Count > 0)
             {
-                System.Diagnostics.Debug.WriteLine("Lookie here: ");
-                var bytesFile1 = File.ReadAllBytes(filePath1);
-                var bytesFile2 = File.ReadAllBytes(filePath2);
+                //System.Diagnostics.Debug.WriteLine("\n\n\nseedFilePath:");
+                //System.Diagnostics.Debug.WriteLine(seedFilePath);
+                OutputBox.Items.Add("--START FUZZY BEARS--");
+                //OutputBox.Items.Add("INFO -> Comparison Score; 0 - not similar; 100 - identical");
+                OutputBox.Items.Add(String.Format("Seed file: {0}", System.IO.Path.GetFileName(seedFilePath)));
+                var seedBytes = File.ReadAllBytes(seedFilePath);
+                var seedHash = SsdeepNET.Hasher.HashBuffer(seedBytes, seedBytes.Length);
+                OutputBox.Items.Add(String.Format("Seed file hash: {0}", seedHash));
 
-
-                var str1_hash = SsdeepNET.Hasher.HashBuffer(bytesFile1, bytesFile1.Length);
-                var str2_hash = SsdeepNET.Hasher.HashBuffer(bytesFile2, bytesFile2.Length);
-                var comparisionResult = Comparer.Compare(str1_hash, str2_hash);
-
-                OutputBox.Items.Add("--START--");
-                OutputBox.Items.Add(String.Format("Comparing {0} and {1}", System.IO.Path.GetFileName(filePath1), System.IO.Path.GetFileName(filePath2)));
-                OutputBox.Items.Add("\nComparison Score: " + comparisionResult);
-                OutputBox.Items.Add("\nFile 1 fuzzy Hash: " + str1_hash);
-                OutputBox.Items.Add("File 2 fuzzy Hash: " + str2_hash);
-                
-                
-                OutputBox.Items.Add("\n--END--\n");
-               
-
+                foreach (string filepath in comparisonFilePaths)
+                {
+                    //check if file exists
+                    OutputBox.Items.Add(String.Format("\tComparing {0} to seedfile...", System.IO.Path.GetFileName(filepath)));
+                    var compBytes = File.ReadAllBytes(filepath);
+                    var compHash = SsdeepNET.Hasher.HashBuffer(compBytes, compBytes.Length);
+                    var comparisionResult = Comparer.Compare(seedHash, compHash);
+                    OutputBox.Items.Add(String.Format("\t\tCompared file hash: {0}", compHash));
+                    OutputBox.Items.Add(String.Format("\t\tComparison Score: {0}", comparisionResult));
+                    OutputBox.Items.Add("");
+                }
+                OutputBox.Items.Add("");
+                OutputBox.Items.Add("--END FUZZY BEARS--");
+                OutputBox.Items.Add("");
             }
             else
             {
                 CompareButton.IsEnabled = false;
-
-
             }
 
             //MessageBox.Show("fileOnePath: " + fileOnePath + "\nfileTwoPath: " + fileTwoPath);
@@ -103,14 +93,26 @@ namespace FuzzyBear
 
         private void File_Selected(object sender, EventArgs e)
         {
-            filePath1 = FileOneSelector.getSelectedFilePath();
-            filePath2 = FileTwoSelector.getSelectedFilePath();
+            if (FileOneSelector.getSelectedFilePath().Count > 0)
+            {
+                seedFilePath = FileOneSelector.getSelectedFilePath()[0];
+            }
+            
+            comparisonFilePaths = FileTwoSelector.getSelectedFilePath();
 
-            //MessageBox.Show("fileOnePath: " + fileOnePath + "\nfileTwoPath: " + fileTwoPath);
-            //MessageBox.Show("fileOnePath not null? " + (fileOnePath != null).ToString() + "\nfileTwoPath not null? " + (fileTwoPath != null).ToString());
+            ////System.Diagnostics.Debug.WriteLine("Lookie here: ");
+            //System.Diagnostics.Debug.WriteLine(String.Format("SEED FILE: {0}\n ", seedFilePath));
+            //var i = 0;
+            //foreach (string s in comparisonFilePaths)
+            //{
+            //    System.Diagnostics.Debug.WriteLine(String.Format("comp file {0}: {1}", i.ToString(), s));
+            //    i++;
+            //}
+            //System.Diagnostics.Debug.WriteLine("END LOOKIE HERE");
+
 
             // if both files are selected, enable compare button, else disable it.
-            if (filePath1 != null && filePath2 != null)
+            if (!String.IsNullOrEmpty(seedFilePath) && comparisonFilePaths.Count > 0)
             {
                 CompareButton.IsEnabled = true;
             }
